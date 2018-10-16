@@ -3,7 +3,7 @@ import data_manager
 import cv2 as cv
 import numpy as np
 
-from network_session_handling import load_discriminator
+from network_session_handling import load_session
 
 import gan_networks
 
@@ -17,8 +17,9 @@ def show_image(image):
     cv.imshow("test_image", num)
     cv.waitKey(0)
 
-discriminator, training_data = load_discriminator()
+discriminator, training_data, generator, generator_data = load_session('saved_session')
 print(training_data)
+print(generator_data)
 batch_size = 1
 
 data_loader = data_manager.data_loader(data_manager.classes.FROG, batch_size, False)

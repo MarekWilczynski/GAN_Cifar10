@@ -39,7 +39,7 @@ class Discriminator(nn.Module):
         self.conv2 = nn.Conv2d(conv_input_count2, conv_output_count2, kernel_size, padding=padding)
         self.lin1 = nn.Linear(lin_input_count1, lin_output_count1)
         self.lin2 = nn.Linear(lin_input_count2, lin_output_count2)
-        self.softmax = nn.Softmax(dim=1) # sum alongside y axis
+        #self.softmax = nn.Softmax(dim=1) # sum alongside y axis
         self.to(self.device)
 
     def forward(self, input):
