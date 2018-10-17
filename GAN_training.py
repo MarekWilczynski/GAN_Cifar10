@@ -65,7 +65,7 @@ for epoch in range(epoch_count):
 
         outputs = discriminator(batch)
         discriminator_loss = criterion(outputs, labels)
-        discriminator_loss.backward(retain_graph=True)
+        discriminator_loss.backward()
 
         discriminator_optimizer.step()
         if(epoch > 0):
@@ -78,22 +78,23 @@ for epoch in range(epoch_count):
             generated_image = generator(noise_vector)
             generated_image_classification = discriminator(generated_image)
 
-            if(iteration_counter == 1):
-                # delay discriminator learning
-                iteration_counter = 0
-                discriminator_optimizer.zero_grad()
-                # should not by fooled by generator
-
-                discriminator_vs_generator_loss = criterion(generated_image_classification, torch.cuda.LongTensor([1])) # 1 -> wrong
-
-                discriminator_loss.backward(retain_graph=True)
-                discriminator_optimizer.step()
-
             # should fool the discriminator
             generator_loss = criterion(generated_image_classification, torch.cuda.LongTensor([0]))
 
             generator_loss.backward()
             generator_optimizer.step()
+
+            if (iteration_counter == 1):
+                # delay discriminator learning
+                iteration_counter = 0
+                discriminator_optimizer.zero_grad()
+                # should not by fooled by generator
+
+                discriminator_vs_generator_loss = criterion(generated_image_classification,
+                                                            torch.cuda.LongTensor([1]))  # 1 -> wrong
+
+                discriminator_vs_generator_loss.backward(retain_graph=True)
+                discriminator_optimizer.step()
 
         logger.store_loss(discriminator_loss.cpu().detach().numpy(),
                           generator_loss.cpu().detach().numpy())
