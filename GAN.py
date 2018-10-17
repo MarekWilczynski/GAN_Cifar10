@@ -22,7 +22,7 @@ print(training_data)
 print(generator_data)
 batch_size = 1
 
-data_loader = data_manager.data_loader(data_manager.classes.FROG, batch_size, False)
+data_loader = data_manager.data_loader(training_data['discriminated_class'], batch_size, False)
 counter = 0
 with torch.no_grad():
     for image, label in data_loader:

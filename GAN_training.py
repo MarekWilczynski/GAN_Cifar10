@@ -18,20 +18,24 @@ def show_image(image):
     cv.waitKey(0)
 
 
-lin_layer1_size = 80
-conv_layer1_size = 12
-conv_layer2_size = 20
+lin_layer1_size = 250
+conv_layer1_size = 20
+conv_layer2_size = 28
 image_size = [32] * 2
 
 discriminator = gan_networks.Discriminator(conv_layer1_size,
                                                conv_layer2_size,
                                                lin_layer1_size,
                                                image_size)
-noise_length = 300
-lin_hidden_layer_size = 300
+noise_length = 400
+lin_hidden_layer_size = 600
+deconv1_size = 120
+deconv2_size = 200
 output_size = [32] * 2
 generator = gan_networks.Generator(noise_length,
                                    lin_hidden_layer_size,
+                                   deconv1_size,
+                                   deconv2_size,
                                    output_size)
 batch_size = 5
 correct_class_enum = data_manager.classes.FROG
@@ -41,10 +45,6 @@ generator_optimizer = torch.optim.Adam(generator.parameters())
 discriminator_optimizer = torch.optim.Adam(discriminator.parameters())
 criterion = torch.nn.CrossEntropyLoss()
 
-input_size = 300
-lin_hidden_layer_size = 800
-output_size = [32] * 2
-
 epoch_count = 4
 incorrect_to_correct_ratio = 1
 
@@ -52,28 +52,46 @@ logger = discriminator_logger(batch_size, epoch_count,
                               incorrect_to_correct_ratio,
                               correct_class_enum,
                               noise_length)
- # rekord: 943 lin1 250/32/64 959 250/20/28
+ # rekord: 943 250/32/64 959 250/20/28
+
+iteration_counter = 0
+
 for epoch in range(epoch_count):
     for batch, labels in data_loader.get_ordered_iterator(incorrect_to_correct_ratio):
+        generator_loss = torch.Tensor([0])
+
         labels = labels.to(discriminator.device)
         discriminator_optimizer.zero_grad()
-        generator_optimizer.zero_grad()
 
         outputs = discriminator(batch)
         discriminator_loss = criterion(outputs, labels)
         discriminator_loss.backward()
 
         discriminator_optimizer.step()
+        if(epoch > 0):
+            iteration_counter = iteration_counter + 1
 
+            discriminator_optimizer.zero_grad()
+            generator_optimizer.zero_grad()
 
-        noise_vector = torch.randn(noise_length)
-        generated_image = generator(noise_vector)
-        generated_image_classification = discriminator(generated_image)
+            noise_vector = torch.randn(noise_length)
+            generated_image = generator(noise_vector)
+            generated_image_classification = discriminator(generated_image)
 
-        generator_loss = criterion(generated_image_classification, torch.cuda.LongTensor([0])) # 0 -> correct label
-        generator_loss.backward()
+            # should fool the discriminator
+            generator_loss = criterion(generated_image_classification, torch.cuda.LongTensor([0]))
 
-        generator_optimizer.step()
+            if(iteration_counter == 2):
+                # delay discriminator learning
+                iteration_counter = 0
+                # should not by fooled by generator
+                discriminator_loss = criterion(generated_image_classification, torch.cuda.LongTensor([1])) # 1 -> wrong
+
+                discriminator_loss.backward(retain_graph=True)
+                discriminator_optimizer.step()
+
+            generator_loss.backward()
+            generator_optimizer.step()
 
         logger.store_loss(discriminator_loss.cpu().detach().numpy(),
                           generator_loss.cpu().detach().numpy())
@@ -88,8 +106,10 @@ discriminator_state = discriminator.state_dict()
 generator_state = generator.state_dict()
 logger.save_results(discriminator_state, generator_state,'saved_session')
 
-noise_vector = torch.randn(noise_length)
-generated_image = generator(noise_vector)
-print(discriminator(generated_image))
+while(True):
 
-show_image(generated_image.cpu())
+    noise_vector = torch.randn(noise_length)
+    generated_image = generator(noise_vector)
+    print(discriminator(generated_image))
+
+    show_image(generated_image.cpu())

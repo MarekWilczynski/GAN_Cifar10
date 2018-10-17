@@ -70,8 +70,12 @@ def load_session(file_name = 'model'):
     generator_state_model = dict['generator_state_model']
     noise_length = dict['generator_noise_length']
     generator_hidden_layer_size = generator_state_model['lin2.weight'].size(0)
+    generator_deconv1_layer_size = generator_state_model['deconv1.weight'].size(0)
+    generator_deconv2_layer_size = generator_state_model['deconv2.weight'].size(0)
     generator = Generator(noise_length,
                           generator_hidden_layer_size,
+                          generator_deconv1_layer_size,
+                          generator_deconv2_layer_size,
                           image_size)
 
     generator_data = {'noise_length': noise_length,

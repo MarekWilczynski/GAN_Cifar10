@@ -60,7 +60,8 @@ class Discriminator(nn.Module):
 class Generator(nn.Module):
     # Generates 32x32px image
 
-    def __init__(self, input_length, hidden_lin_layer_size, output_image_size, kernel_size = 5):
+    def __init__(self, input_length, hidden_lin_layer_size,
+                 deconv1_size, deconv2_size, output_image_size, kernel_size = 5):
         super(Generator, self).__init__()
 
         if (not (torch.cuda.is_available())):
@@ -77,16 +78,20 @@ class Generator(nn.Module):
         lin_input2_size = lin_output1_size
         lin_output2_size = int(np.prod(output_image_size) / 16) # 16 -> ((a/2)^2)
 
-        deconv_input1 = 1 # red
-        deconv_output1 = 2 # green
+        deconv_input1 = 1
+        deconv_output1 = deconv1_size
 
         deconv_input2 = deconv_output1
-        deconv_output2 = 3 # blue
+        deconv_output2 = deconv2_size
+
+        conv_input = deconv_output2
+        conv_output = 3
 
         self.lin1 = nn.Linear(lin_input1_size, lin_output1_size)
         self.lin2 = nn.Linear(lin_input2_size, lin_output2_size)
         self.deconv1 = nn.ConvTranspose2d(deconv_input1, deconv_output1, kernel_size, stride=2, padding=2,output_padding=1)
         self.deconv2 = nn.ConvTranspose2d(deconv_input2, deconv_output2, kernel_size, stride=2, padding=2,output_padding=1)
+        self.conv1 = nn.Conv2d(conv_input, conv_output, kernel_size, padding=2)
         self.to(self.device)
 
 
@@ -100,4 +105,5 @@ class Generator(nn.Module):
         x = x.view(1, 1, img_before_scaling_size, -1)
         x = self.deconv1(x)
         x = self.deconv2(x)
+        x = self.conv1(x)
         return x

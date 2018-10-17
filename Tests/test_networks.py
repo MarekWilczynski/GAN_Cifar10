@@ -27,11 +27,15 @@ class TestNetworks(TestCase):
         # given
         input_size = 300
         lin_hidden_layer_size = 800
+        deconv_layer1_size = 20
+        deconv_layer2_size = 40
         output_size = [32] * 2
 
         input = torch.randn(input_size)
         generator = networks.Generator(input_size,
                                        lin_hidden_layer_size,
+                                       deconv_layer1_size,
+                                       deconv_layer2_size,
                                        output_size)
         # when
         output = generator(input)
@@ -44,6 +48,7 @@ class TestNetworks(TestCase):
 
         # dicriminator
         lin_layer1_size = 400
+
         conv_layer1_size = 32
         conv_layer2_size = 64
         image_size = [32] * 2
@@ -55,12 +60,16 @@ class TestNetworks(TestCase):
 
         # generator
         input_size = 300
-        lin_hidden_layer_size = 800
+        lin_hidden_layer_size = 200
+        deconv_layer1_size = 20
+        deconv_layer2_size = 40
         output_size = [32] * 2
 
         input = torch.randn(input_size)
         generator = networks.Generator(input_size,
                                        lin_hidden_layer_size,
+                                       deconv_layer1_size,
+                                       deconv_layer2_size,
                                        output_size)
         generated = generator(input)
 
